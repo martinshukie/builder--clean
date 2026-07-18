@@ -1,0 +1,59 @@
+const DEFAULT_FETCH_URL = 'https://api.example.com/sp500';
+const POLL_INTERVAL_MS = 60_000;
+const STARTING_CAPITAL = 10000;
+const TOP_COUNT = 10;
+const DEFAULT_FETCH_URL = 'https://api.example.com/sp500';
+const POLL_INTERVAL_MS = 60_000;
+const STARTING_CAPITAL = 10000;
+const TOP_COUNT = 10;
+async function fetchIndexData() {
+ try {
+ const res = await fetch(DEFAULT_FETCH_URL, { cache: 'no-store' });
+ if (!res.ok) throw new Error('Network response not ok');
+ const json = await res.json();
+ if (!Array.isArray(json)) throw new Error('Invalid data');
+ return json;
+ } catch (err) {
+ return [
+      { symbol: 'AAPL', price: 170.12, changePercent: 0.8, volatility: 0.12, trendStrength: 0.7 },
+      { symbol: 'MSFT', price: 320.45, changePercent: 0.5, volatility: 0.10, trendStrength: 0.6 },
+      { symbol: 'GOOGL', price: 118.2, changePercent: -0.3, volatility: 0.14, trendStrength: 0.4 },
+      { symbol: 'AMZN', price: 98.4, changePercent: 1.2, volatility: 0.16, trendStrength: 0.5 },
+      { symbol: 'TSLA', price: 210.3, changePercent: 2.5, volatility: 0.50, trendStrength: 0.8 },
+      { symbol: 'NVDA', price: 420.0, changePercent: 1.0, volatility: 0.22, trendStrength: 0.9 },
+      { symbol: 'FB', price: 185.0, changePercent: -0.1, volatility: 0.11, trendStrength: 0.45 },
+      { symbol: 'NFLX', price: 280.0, changePercent: 0.2, volatility: 0.18, trendStrength: 0.55 },
+      { symbol: 'INTC', price: 28.0, changePercent: -0.5, volatility: 0.08, trendStrength: 0.25 },
+      { symbol: 'AMD', price: 120.5, changePercent: 0.9, volatility: 0.30, trendStrength: 0.6 },
+    ];
+ }
+}function rankPredictability(stocks = []) {
+ return stocks
+ .map((s) => ({ ...s, score: (1 / (s.volatility || 0.0001)) + (s.trendStrength || 0) }))
+ .sort((a, b) => b.score - a.score);
+}function allocateCapital(stocks = [], totalCapital = STARTING_CAPITAL, topN = TOP_COUNT) {
+ const top = stocks.slice(0, topN);
+ if (top.length === 0) return [];
+ const perStock = totalCapital / top.length;
+ return top.map((s) => ({
+ symbol: s.symbol,
+ invested: Number(perStock.toFixed(2)),
+ lastPrice: s.price,
+ shares: Number((perStock / s.price).toFixed(6)),
+ }));
+}function GraphComponent({ data = [] }) {
+ if (!data || data.length === 0) return <div>No graph data yet</div>;
+ const max = Math.max(...data);
+ const min = Math.min(...data);
+ const range = Math.max(1e-6, max - min);
+ return (
+ <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 60 }}>
+ {data.map((v, i) => {
+ const height = ((v - min) / range) * 100;
+ return (
+ <div key={i} title={${v}} style={{ width: 8, height: ${Math.max(2, height)}%, background: '#3b82f6', borderRadius: 2 }} />
+ );
+ })}
+ </div>
+ );
+}
